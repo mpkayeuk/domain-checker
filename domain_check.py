@@ -107,7 +107,7 @@ def check_domain(domain):
                 "registration_date": None,
                 "expiration_date": None,
             }
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         error_msg = str(e)
         return {
             "domain": domain,
