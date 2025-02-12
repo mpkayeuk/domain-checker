@@ -9,7 +9,12 @@ import pytest
 
 # Add parent directory to Python path to import domain_check.py
 sys.path.append(str(Path(__file__).parent.parent))
-from domain_check import check_domain, parse_date, write_csv, main  # noqa: E402
+from domain_check import (  # noqa: E402
+    check_domain,
+    parse_date,
+    write_csv,
+    main,
+)
 
 
 def test_parse_date():
@@ -105,16 +110,17 @@ def test_write_csv():
         },
     ]
 
-    with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp_file:
         write_csv(results, temp_file.name)
-        
+
         # Read and verify the CSV contents
-        with open(temp_file.name, 'r') as f:
-            content = f.read().strip().split('\n')
-            assert content[0] == "domain,status,registration_date,expiration_date"
+        with open(temp_file.name, "r") as f:
+            content = f.read().strip().split("\n")
+            header = "domain,status,registration_date,expiration_date"
+            assert content[0] == header
             assert content[1] == "test.com,REGISTERED,2020-01-01,2025-01-01"
             assert content[2] == "example.com,AVAILABLE,,"
-    
+
     os.unlink(temp_file.name)
 
 
@@ -123,7 +129,11 @@ def test_write_csv():
     [
         (
             ["-d", "test.com"],
-            "test.com: REGISTERED (registered: 2020-01-01, expires: 2025-01-01)",
+            (
+                "test.com: REGISTERED "
+                "(registered: 2020-01-01, "
+                "expires: 2025-01-01)"
+            ),
             {
                 "domain": "test.com",
                 "status": "REGISTERED",
@@ -155,7 +165,7 @@ def test_main_single_domain(args, expected_output, mock_check_result, capsys):
 
 def test_main_file_input():
     """Test main function with file input."""
-    with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp_file:
         temp_file.write("test.com,example.com")
         temp_file.flush()
 
