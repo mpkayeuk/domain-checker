@@ -3,7 +3,7 @@ from unittest.mock import patch, Mock
 import sys
 from pathlib import Path
 
-# Add parent directory to Python path to import domain-check
+# Add parent directory to Python path to import domain_check.py
 sys.path.append(str(Path(__file__).parent.parent))
 from domain_check import check_domain, parse_date
 

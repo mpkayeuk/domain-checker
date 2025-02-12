@@ -46,29 +46,29 @@ You can run this tool either natively with Python or using Docker.
 
 3. Make the script executable:
    ```bash
-   chmod +x domain-check
+   chmod +x domain_check.py
    ```
 
 #### Native Usage
 
 Check a single domain:
 ```bash
-./domain-check -d example.com
+./domain_check.py -d example.com
 ```
 
 Check multiple domains from a file:
 ```bash
-./domain-check -f domains.txt
+./domain_check.py -f domains.txt
 ```
 
 Show only available domains:
 ```bash
-./domain-check -f domains.txt -a
+./domain_check.py -f domains.txt -a
 ```
 
 Export results to CSV:
 ```bash
-./domain-check -f domains.txt -c results.csv
+./domain_check.py -f domains.txt -c results.csv
 ```
 
 ### Option 2: Docker Installation
@@ -174,7 +174,7 @@ expired-domain.com,EXPIRED,,
 ## Command Line Options
 
 ```
-usage: domain-check [-h] (-d DOMAIN | -f FILE) [-a] [-c CSV]
+usage: domain_check.py [-h] (-d DOMAIN | -f FILE) [-a] [-c CSV]
 
 Check domain availability
 
