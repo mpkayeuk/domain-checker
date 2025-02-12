@@ -196,7 +196,13 @@ def test_write_csv_error():
     """Test CSV writing error handling."""
     results = [{"domain": "test.com"}]
     with pytest.raises(SystemExit):
-        write_csv(results, "/nonexistent/path/file.csv")
+        with patch("builtins.print") as mock_print:
+            write_csv(results, "/nonexistent/path/file.csv")
+            mock_print.assert_called_with(
+                "Error writing CSV file: [Errno 2] No such file or directory:\
+                 '/nonexistent/path/file.csv'",
+                file=sys.stderr,
+            )
 
 
 @pytest.mark.parametrize(
@@ -342,15 +348,11 @@ def test_main_with_csv_output():
                 content = f.read().strip().split("\n")
                 header = "domain,status,registration_date,expiration_date"
                 assert content[0] == header
-                assert content[1] == (
-                    "test.com, \
-                    REGISTERED, \
-                    2020-01-01, \
-                    2025-01-01"
-                )
+                expected = "test.com,REGISTERED," "2020-01-01,2025-01-01"
+                assert content[1] == expected
 
-        os.unlink(cf.name)
-    os.unlink(df.name)
+            os.unlink(cf.name)
+        os.unlink(df.name)
 
 
 def test_main_direct():
