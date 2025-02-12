@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Domain availability checker using RDAP protocol.
 
-This module provides functionality to check domain availability and registration
-information using the Registration Data Access Protocol (RDAP).
+This module provides functionality to check domain availability
+and registration information using RDAP.
 """
 
 import sys
@@ -19,7 +19,8 @@ def parse_date(date_str):
         date_str (str): Date string in ISO format with optional timezone.
 
     Returns:
-        str or None: Formatted date string (YYYY-MM-DD) or None if parsing fails.
+        str or None: Formatted date string (YYYY-MM-DD) or None if
+        parsing fails.
     """
     if not date_str:
         return None
@@ -38,10 +39,13 @@ def check_domain(domain):
         domain (str): The domain name to check.
 
     Returns:
-        dict: A dictionary containing domain status and registration information.
+        dict: A dictionary containing domain status and registration
+        details.
     """
     try:
-        response = requests.get(f"https://rdap.org/domain/{domain}", timeout=5)
+        url = f"https://rdap.org/domain/{domain}"
+        response = requests.get(url, timeout=5)
+
         if response.status_code == 404:
             return {
                 "domain": domain,
@@ -52,14 +56,15 @@ def check_domain(domain):
         elif response.status_code == 200:
             data = response.json()
             status = data.get("status", [])
-            reg_date = (
-                parse_date(data.get("events", [{}])[0].get("eventDate"))
-                if data.get("events")
-                else None
-            )
-            exp_date = None
+            events = data.get("events", [{}])
+
+            # Get registration date from first event
+            reg_date = None
+            if events:
+                reg_date = parse_date(events[0].get("eventDate"))
 
             # Look for expiration date in events
+            exp_date = None
             for event in data.get("events", []):
                 if event.get("eventAction") == "expiration":
                     exp_date = parse_date(event.get("eventDate"))
@@ -71,14 +76,19 @@ def check_domain(domain):
                 "expiration_date": exp_date,
             }
 
-            if "pending delete" in status or "redemption period" in status:
-                result["status"] = "PENDING DELETE"
-            elif "pending transfer" in status:
-                result["status"] = "PENDING TRANSFER"
-            elif "client hold" in status:
-                result["status"] = "ON HOLD"
-            elif "expired" in status:
-                result["status"] = "EXPIRED"
+            # Check domain status
+            status_checks = [
+                ("pending delete", "PENDING DELETE"),
+                ("redemption period", "PENDING DELETE"),
+                ("pending transfer", "PENDING TRANSFER"),
+                ("client hold", "ON HOLD"),
+                ("expired", "EXPIRED"),
+            ]
+
+            for check, result_status in status_checks:
+                if check in status:
+                    result["status"] = result_status
+                    break
             else:
                 result["status"] = "REGISTERED"
 
@@ -98,9 +108,10 @@ def check_domain(domain):
                 "expiration_date": None,
             }
     except requests.exceptions.RequestException as e:
+        error_msg = str(e)
         return {
             "domain": domain,
-            "status": f"ERROR ({str(e)})",
+            "status": f"ERROR ({error_msg})",
             "registration_date": None,
             "expiration_date": None,
         }
@@ -110,17 +121,12 @@ def write_csv(results, filename):
     """Write domain check results to a CSV file.
 
     Args:
-        results (list): List of dictionaries containing domain check results.
+        results (list): List of domain check result dictionaries.
         filename (str): Path to the output CSV file.
     """
-    fieldnames = [
-        "domain",
-        "status",
-        "registration_date",
-        "expiration_date"
-    ]
+    fields = ["domain", "status", "registration_date", "expiration_date"]
     with open(filename, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer = csv.DictWriter(f, fieldnames=fields)
         writer.writeheader()
         writer.writerows(results)
 
@@ -130,7 +136,7 @@ def main():
     parser = argparse.ArgumentParser(description="Check domain availability")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-d", "--domain", help="Single domain to check")
-    group.add_argument("-f", "--file", help="File containing comma-separated domains")
+    group.add_argument("-f", "--file", help="Input file with domains")
     parser.add_argument(
         "-a",
         "--available-only",

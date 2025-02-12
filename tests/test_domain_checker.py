@@ -2,15 +2,12 @@
 
 import sys
 from pathlib import Path
+from unittest.mock import Mock, patch
+import pytest
 
 # Add parent directory to Python path to import domain_check.py
 sys.path.append(str(Path(__file__).parent.parent))
-
-from unittest.mock import Mock, patch
-
-import pytest
-
-from domain_check import check_domain, parse_date
+from domain_check import check_domain, parse_date  # noqa: E402
 
 
 def test_parse_date():
