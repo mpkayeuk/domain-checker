@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+
+import sys
+import requests
+import argparse
+from pathlib import Path
+
+def check_domain(domain):
+    """Check if a domain is registered using RDAP."""
+    try:
+        response = requests.get(f'https://rdap.org/domain/{domain}', timeout=5)
+        if response.status_code == 404:
+            return (domain, "AVAILABLE")
+        elif response.status_code == 200:
+            data = response.json()
+            status = data.get('status', [])
+            if 'pending delete' in status or 'redemption period' in status:
+                return (domain, "PENDING DELETE")
+            elif 'pending transfer' in status:
+                return (domain, "PENDING TRANSFER")
+            elif 'client hold' in status:
+                return (domain, "ON HOLD")
+            elif 'expired' in status:
+                return (domain, "EXPIRED")
+            else:
+                return (domain, "REGISTERED")
+        elif response.status_code == 429:
+            return (domain, "RATE LIMITED")
+        else:
+            return (domain, f"ERROR ({response.status_code})")
+    except requests.exceptions.RequestException as e:
+        return (domain, f"ERROR ({str(e)})")
+
+def main():
+    parser = argparse.ArgumentParser(description='Check domain availability')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-d', '--domain', help='Single domain to check')
+    group.add_argument('-f', '--file', help='File containing comma-separated domains')
+    parser.add_argument('-a', '--available-only', action='store_true', 
+                      help='Show only available domains')
+    
+    args = parser.parse_args()
+    
+    domains = []
+    if args.domain:
+        domains = [args.domain]
+    elif args.file:
+        try:
+            with open(args.file, 'r') as f:
+                content = f.read().strip()
+                domains = [d.strip() for d in content.split(',') if d.strip()]
+        except Exception as e:
+            print(f"Error reading file: {e}")
+            sys.exit(1)
+    
+    if args.available_only:
+        print("Available domains:")
+        print("-----------------")
+    
+    for domain in domains:
+        domain, status = check_domain(domain)
+        if args.available_only:
+            if status == "AVAILABLE":
+                print(domain)
+        else:
+            print(f"{domain}: {status}")
+
+if __name__ == '__main__':
+    main() 
