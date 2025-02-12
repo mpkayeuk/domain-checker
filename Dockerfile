@@ -9,4 +9,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 RUN chmod +x /app/domain_check.py
 
-ENTRYPOINT ["/app/domain_check.py"] 
+ENTRYPOINT ["/app/domain_check.py"]

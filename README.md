@@ -274,4 +274,4 @@ The project uses GitHub Actions for continuous integration:
 2. **Docker Build Workflow**
    - Builds the Docker image
    - Runs functional tests on the container
-   - Publishes the image to GitHub Container Registry (on main branch and tags) 
+   - Publishes the image to GitHub Container Registry (on main branch and tags)

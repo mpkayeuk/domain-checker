@@ -58,11 +58,11 @@ jobs:
         run: |
           # Test single domain check
           docker run ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:test -d example.com
-          
+
           # Test with a sample domains file
           echo "example.com,google.com" > test-domains.txt
           docker run -v $(pwd)/test-domains.txt:/app/domains.txt ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:test -f /app/domains.txt
-          
+
           # Test CSV export
           docker run -v $(pwd):/app/output ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:test -d example.com -c /app/output/test-results.csv
           test -f test-results.csv || exit 1
@@ -74,4 +74,4 @@ jobs:
           context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }} 
+          labels: ${{ steps.meta.outputs.labels }}
