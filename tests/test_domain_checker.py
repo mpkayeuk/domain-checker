@@ -1,13 +1,15 @@
 """Test suite for domain checker functionality."""
 
 import sys
+import os
+import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 import pytest
 
 # Add parent directory to Python path to import domain_check.py
 sys.path.append(str(Path(__file__).parent.parent))
-from domain_check import check_domain, parse_date  # noqa: E402
+from domain_check import check_domain, parse_date, write_csv, main  # noqa: E402
 
 
 def test_parse_date():
@@ -84,3 +86,97 @@ def test_check_domain_connection_error():
         result = check_domain("test.com")
         assert result["status"].startswith("ERROR")
         assert "Connection error" in result["status"]
+
+
+def test_write_csv():
+    """Test CSV writing functionality."""
+    results = [
+        {
+            "domain": "test.com",
+            "status": "REGISTERED",
+            "registration_date": "2020-01-01",
+            "expiration_date": "2025-01-01",
+        },
+        {
+            "domain": "example.com",
+            "status": "AVAILABLE",
+            "registration_date": None,
+            "expiration_date": None,
+        },
+    ]
+
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
+        write_csv(results, temp_file.name)
+        
+        # Read and verify the CSV contents
+        with open(temp_file.name, 'r') as f:
+            content = f.read().strip().split('\n')
+            assert content[0] == "domain,status,registration_date,expiration_date"
+            assert content[1] == "test.com,REGISTERED,2020-01-01,2025-01-01"
+            assert content[2] == "example.com,AVAILABLE,,"
+    
+    os.unlink(temp_file.name)
+
+
+@pytest.mark.parametrize(
+    "args,expected_output,mock_check_result",
+    [
+        (
+            ["-d", "test.com"],
+            "test.com: REGISTERED (registered: 2020-01-01, expires: 2025-01-01)",
+            {
+                "domain": "test.com",
+                "status": "REGISTERED",
+                "registration_date": "2020-01-01",
+                "expiration_date": "2025-01-01",
+            },
+        ),
+        (
+            ["-d", "example.com", "-a"],
+            "",  # Should output nothing as domain is not available
+            {
+                "domain": "example.com",
+                "status": "REGISTERED",
+                "registration_date": "2020-01-01",
+                "expiration_date": "2025-01-01",
+            },
+        ),
+    ],
+)
+def test_main_single_domain(args, expected_output, mock_check_result, capsys):
+    """Test main function with single domain checks."""
+    with patch("domain_check.check_domain") as mock_check:
+        mock_check.return_value = mock_check_result
+        with patch("sys.argv", ["domain_check.py"] + args):
+            main()
+            captured = capsys.readouterr()
+            assert captured.out.strip() == expected_output
+
+
+def test_main_file_input():
+    """Test main function with file input."""
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
+        temp_file.write("test.com,example.com")
+        temp_file.flush()
+
+        mock_results = [
+            {
+                "domain": "test.com",
+                "status": "REGISTERED",
+                "registration_date": "2020-01-01",
+                "expiration_date": "2025-01-01",
+            },
+            {
+                "domain": "example.com",
+                "status": "AVAILABLE",
+                "registration_date": None,
+                "expiration_date": None,
+            },
+        ]
+
+        with patch("domain_check.check_domain") as mock_check:
+            mock_check.side_effect = mock_results
+            with patch("sys.argv", ["domain_check.py", "-f", temp_file.name]):
+                main()
+
+    os.unlink(temp_file.name)
