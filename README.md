@@ -17,17 +17,23 @@ A simple command-line tool to check domain name availability using RDAP (Registr
   - ERROR - Any other errors with details
 - Option to show only available domains
 - Simple comma-separated file input format
+- Supports both native Python execution and Docker containerization
 
-## Requirements
+## Installation & Usage
 
+You can run this tool either natively with Python or using Docker.
+
+### Option 1: Native Python Installation
+
+#### Requirements
 - Python 3.6 or higher
 - `requests` library
 
-## Installation
+#### Installation Steps
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/yourusername/domain-checker.git
+   git clone https://github.com/mpkayeuk/domain-checker.git
    cd domain-checker
    ```
 
@@ -41,27 +47,64 @@ A simple command-line tool to check domain name availability using RDAP (Registr
    chmod +x domain-check
    ```
 
-## Usage
+#### Native Usage
 
-### Check a single domain:
+Check a single domain:
 ```bash
 ./domain-check -d example.com
 ```
 
-### Check multiple domains from a file:
-Create a text file (e.g., `domains.txt`) with comma-separated domain names:
-```
-example.com, mydomain.com, anotherdomain.net
-```
-
-Then run:
+Check multiple domains from a file:
 ```bash
 ./domain-check -f domains.txt
 ```
 
-### Show only available domains:
+Show only available domains:
 ```bash
 ./domain-check -f domains.txt -a
+```
+
+### Option 2: Docker Installation
+
+#### Requirements
+- Docker installed on your system
+
+#### Installation Steps
+
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/mpkayeuk/domain-checker.git
+   cd domain-checker
+   ```
+
+2. Build the Docker image:
+   ```bash
+   docker build -t domain-checker .
+   ```
+
+#### Docker Usage
+
+Check a single domain:
+```bash
+docker run domain-checker -d example.com
+```
+
+Check multiple domains from a file:
+```bash
+# Assuming your domains file is in the current directory
+docker run -v $(pwd)/domains.txt:/app/domains.txt domain-checker -f /app/domains.txt
+```
+
+Show only available domains:
+```bash
+docker run domain-checker -d example.com -a
+```
+
+## Input File Format
+
+For checking multiple domains, create a text file (e.g., `domains.txt`) with comma-separated domain names:
+```
+example.com,mydomain.com,anotherdomain.net
 ```
 
 ## Example Output
@@ -96,11 +139,24 @@ options:
   -a, --available-only  Show only available domains
 ```
 
-## Limitations
+## Troubleshooting
 
+### General Issues
 - RDAP servers may have rate limits
 - Some TLDs might not support RDAP queries
 - Response times may vary based on server load
+
+### Docker-Specific Issues
+1. If you get permission errors when mounting files, ensure the file permissions are correct on your host system.
+2. For any network-related issues, ensure your Docker host has internet connectivity.
+
+## Security Notes
+
+When running with Docker:
+- The container runs with minimal privileges using a slim Python image
+- Only necessary dependencies are installed
+- Uses official Python base image
+- No sensitive data is stored in the container
 
 ## Contributing
 
