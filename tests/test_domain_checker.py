@@ -3,9 +3,12 @@
 import sys
 import os
 import tempfile
+import importlib
 from pathlib import Path
 from unittest.mock import Mock, patch
 import pytest
+import runpy
+import requests
 
 # Add parent directory to Python path to import domain_check.py
 sys.path.append(str(Path(__file__).parent.parent))
@@ -69,6 +72,45 @@ def test_parse_date():
                 "expiration_date": None,
             },
         ),
+        (
+            200,
+            {
+                "status": ["pending delete"],
+                "events": [],
+            },
+            {
+                "domain": "test.com",
+                "status": "PENDING DELETE",
+                "registration_date": None,
+                "expiration_date": None,
+            },
+        ),
+        (
+            200,
+            {
+                "status": ["client hold"],
+                "events": [],
+            },
+            {
+                "domain": "test.com",
+                "status": "ON HOLD",
+                "registration_date": None,
+                "expiration_date": None,
+            },
+        ),
+        (
+            200,
+            {
+                "status": ["expired"],
+                "events": [],
+            },
+            {
+                "domain": "test.com",
+                "status": "EXPIRED",
+                "registration_date": None,
+                "expiration_date": None,
+            },
+        ),
     ],
 )
 def test_check_domain(status_code, response_data, expected_result):
@@ -91,6 +133,34 @@ def test_check_domain_connection_error():
         result = check_domain("test.com")
         assert result["status"].startswith("ERROR")
         assert "Connection error" in result["status"]
+
+
+def test_check_domain_json_error():
+    """Test domain checking behavior when JSON parsing fails."""
+    with patch("requests.get") as mock_get:
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.side_effect = ValueError("Invalid JSON")
+        mock_get.return_value = mock_response
+
+        result = check_domain("test.com")
+        assert result["status"].startswith("ERROR")
+        assert "Invalid JSON" in result["status"]
+
+
+def test_check_domain_json_decode_error():
+    """Test domain checking behavior when JSON decoding fails."""
+    with patch("requests.get") as mock_get:
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.side_effect = requests.exceptions.JSONDecodeError(
+            "Invalid JSON", "", 0
+        )
+        mock_get.return_value = mock_response
+
+        result = check_domain("test.com")
+        assert result["status"].startswith("ERROR")
+        assert "Invalid JSON" in result["status"]
 
 
 def test_write_csv():
@@ -122,6 +192,13 @@ def test_write_csv():
             assert content[2] == "example.com,AVAILABLE,,"
 
     os.unlink(temp_file.name)
+
+
+def test_write_csv_error():
+    """Test CSV writing error handling."""
+    results = [{"domain": "test.com"}]
+    with pytest.raises(SystemExit):
+        write_csv(results, "/nonexistent/path/file.csv")
 
 
 @pytest.mark.parametrize(
@@ -190,3 +267,92 @@ def test_main_file_input():
                 main()
 
     os.unlink(temp_file.name)
+
+
+def test_main_file_input_error():
+    """Test main function with nonexistent file."""
+    with patch("sys.argv", ["domain_check.py", "-f", "/nonexistent/file"]):
+        with pytest.raises(SystemExit):
+            main()
+
+
+def test_main_available_only():
+    """Test main function with available-only flag."""
+    mock_results = [
+        {
+            "domain": "test.com",
+            "status": "REGISTERED",
+            "registration_date": None,
+            "expiration_date": None,
+        },
+        {
+            "domain": "example.com",
+            "status": "AVAILABLE",
+            "registration_date": None,
+            "expiration_date": None,
+        },
+    ]
+
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp_file:
+        temp_file.write("test.com,example.com")
+        temp_file.flush()
+
+        with patch("domain_check.check_domain") as mock_check:
+            mock_check.side_effect = mock_results
+            with patch("sys.argv", ["domain_check.py", "-f", temp_file.name, "-a"]):
+                with patch("builtins.print") as mock_print:
+                    main()
+                    mock_print.assert_called_with("example.com")
+
+    os.unlink(temp_file.name)
+
+
+def test_main_with_csv_output():
+    """Test main function with CSV output."""
+    mock_results = [
+        {
+            "domain": "test.com",
+            "status": "REGISTERED",
+            "registration_date": "2020-01-01",
+            "expiration_date": "2025-01-01",
+        },
+    ]
+
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as domains_file:
+        domains_file.write("test.com")
+        domains_file.flush()
+
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as csv_file:
+            with patch("domain_check.check_domain") as mock_check:
+                mock_check.side_effect = mock_results
+                with patch(
+                    "sys.argv",
+                    ["domain_check.py", "-f", domains_file.name, "-c", csv_file.name],
+                ):
+                    with patch("builtins.print") as mock_print:
+                        main()
+                        mock_print.assert_called_with(f"\nResults exported to {csv_file.name}")
+
+            # Verify CSV contents
+            with open(csv_file.name, "r") as f:
+                content = f.read().strip().split("\n")
+                header = "domain,status,registration_date,expiration_date"
+                assert content[0] == header
+                assert content[1] == "test.com,REGISTERED,2020-01-01,2025-01-01"
+
+        os.unlink(csv_file.name)
+    os.unlink(domains_file.name)
+
+
+def test_main_direct():
+    """Test running the script directly."""
+    with patch("sys.argv", ["domain_check.py", "-d", "test.com"]):
+        with patch("domain_check.main") as mock_main:
+            import domain_check
+            domain_check.__name__ = "__main__"
+            domain_check.main()
+            assert mock_main.called
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])
