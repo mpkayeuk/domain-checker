@@ -78,6 +78,19 @@ Export results to CSV:
 
 #### Installation Steps
 
+You can either build the image locally or pull it from GitHub Container Registry.
+
+##### Option A: Pull from GitHub Container Registry
+```bash
+docker pull ghcr.io/mpkayeuk/domain-checker:main
+```
+
+Or use a specific version:
+```bash
+docker pull ghcr.io/mpkayeuk/domain-checker:v1.0.0
+```
+
+##### Option B: Build Locally
 1. Clone this repository:
    ```bash
    git clone https://github.com/mpkayeuk/domain-checker.git
@@ -91,27 +104,39 @@ Export results to CSV:
 
 #### Docker Usage
 
+If you pulled the image from GitHub Container Registry, replace `domain-checker` with `ghcr.io/mpkayeuk/domain-checker:main` in the following commands.
+
 Check a single domain:
 ```bash
-docker run domain-checker -d example.com
+docker run ghcr.io/mpkayeuk/domain-checker:main -d example.com
 ```
 
 Check multiple domains from a file:
 ```bash
 # Assuming your domains file is in the current directory
-docker run -v $(pwd)/domains.txt:/app/domains.txt domain-checker -f /app/domains.txt
+docker run -v $(pwd)/domains.txt:/app/domains.txt ghcr.io/mpkayeuk/domain-checker:main -f /app/domains.txt
 ```
 
 Show only available domains:
 ```bash
-docker run domain-checker -d example.com -a
+docker run ghcr.io/mpkayeuk/domain-checker:main -d example.com -a
 ```
 
 Export results to CSV:
 ```bash
 # Export results to a CSV file in the current directory
-docker run -v $(pwd):/app/output domain-checker -f /app/domains.txt -c /app/output/results.csv
+docker run -v $(pwd):/app/output ghcr.io/mpkayeuk/domain-checker:main -f /app/domains.txt -c /app/output/results.csv
 ```
+
+## Container Registry
+
+The Docker image is automatically built and published to GitHub Container Registry on every push to the main branch and when new version tags are created. You can find all available versions at:
+https://github.com/mpkayeuk/domain-checker/pkgs/container/domain-checker
+
+Available tags:
+- `main` - Latest version from the main branch
+- `v1.0.0` - Specific version releases
+- `sha-XXXXXXX` - Specific commit builds
 
 ## Input File Format
 
