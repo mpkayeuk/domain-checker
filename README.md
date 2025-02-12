@@ -212,4 +212,66 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Development
+
+### Setting Up Development Environment
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/mpkayeuk/domain-checker.git
+   cd domain-checker
+   ```
+
+2. Install development dependencies:
+   ```bash
+   pip install -r requirements-dev.txt
+   ```
+
+3. Install pre-commit hooks:
+   ```bash
+   pre-commit install
+   ```
+
+### Running Tests
+
+Run the test suite:
+```bash
+pytest tests/
+```
+
+Run tests with coverage report:
+```bash
+pytest tests/ --cov=./ --cov-report=term-missing
+```
+
+### Code Quality
+
+This project uses several tools to maintain code quality:
+
+- **pre-commit hooks** for automated code formatting and checks
+- **black** for code formatting
+- **flake8** for code style and quality checks
+- **pytest** for testing
+- **pytest-cov** for test coverage reporting
+
+The pre-commit hooks will run automatically when you commit changes. You can also run them manually:
+```bash
+pre-commit run --all-files
+```
+
+### Continuous Integration
+
+The project uses GitHub Actions for continuous integration:
+
+1. **Python Tests Workflow**
+   - Runs on multiple Python versions (3.8-3.11)
+   - Executes the test suite
+   - Runs code quality checks
+   - Reports test coverage
+
+2. **Docker Build Workflow**
+   - Builds the Docker image
+   - Runs functional tests on the container
+   - Publishes the image to GitHub Container Registry (on main branch and tags) 
