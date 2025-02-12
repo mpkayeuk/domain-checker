@@ -125,10 +125,14 @@ def write_csv(results, filename):
         filename (str): Path to the output CSV file.
     """
     fields = ["domain", "status", "registration_date", "expiration_date"]
-    with open(filename, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fields)
-        writer.writeheader()
-        writer.writerows(results)
+    try:
+        with open(filename, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fields)
+            writer.writeheader()
+            writer.writerows(results)
+    except IOError as e:
+        print(f"Error writing CSV file: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 def main():
