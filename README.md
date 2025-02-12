@@ -1,5 +1,8 @@
 # Domain Availability Checker
 
+[![Python Tests](https://github.com/mpkayeuk/domain-checker/actions/workflows/python-test.yml/badge.svg)](https://github.com/mpkayeuk/domain-checker/actions/workflows/python-test.yml)
+[![codecov](https://codecov.io/gh/mpkayeuk/domain-checker/graph/badge.svg)](https://codecov.io/gh/mpkayeuk/domain-checker)
+
 A simple command-line tool to check domain name availability using RDAP (Registration Data Access Protocol). This tool can check single domains or process multiple domains from a file, with no API keys or registration required.
 
 ## Features
