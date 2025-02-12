@@ -18,6 +18,8 @@ A simple command-line tool to check domain name availability using RDAP (Registr
 - Option to show only available domains
 - Simple comma-separated file input format
 - Supports both native Python execution and Docker containerization
+- Export results to CSV for spreadsheet analysis
+- Displays registration and expiration dates for registered domains
 
 ## Installation & Usage
 
@@ -64,6 +66,11 @@ Show only available domains:
 ./domain-check -f domains.txt -a
 ```
 
+Export results to CSV:
+```bash
+./domain-check -f domains.txt -c results.csv
+```
+
 ### Option 2: Docker Installation
 
 #### Requirements
@@ -100,6 +107,12 @@ Show only available domains:
 docker run domain-checker -d example.com -a
 ```
 
+Export results to CSV:
+```bash
+# Export results to a CSV file in the current directory
+docker run -v $(pwd):/app/output domain-checker -f /app/domains.txt -c /app/output/results.csv
+```
+
 ## Input File Format
 
 For checking multiple domains, create a text file (e.g., `domains.txt`) with comma-separated domain names:
@@ -111,7 +124,7 @@ example.com,mydomain.com,anotherdomain.net
 
 Regular output (all statuses):
 ```
-example.com: REGISTERED
+example.com: REGISTERED (registered: 1995-08-14, expires: 2024-08-13)
 available-domain.com: AVAILABLE
 pending-domain.com: PENDING DELETE
 expired-domain.com: EXPIRED
@@ -124,10 +137,19 @@ Available domains:
 available-domain.com
 ```
 
+CSV output (results.csv):
+```csv
+domain,status,registration_date,expiration_date
+example.com,REGISTERED,1995-08-14,2024-08-13
+available-domain.com,AVAILABLE,,
+pending-domain.com,PENDING DELETE,,
+expired-domain.com,EXPIRED,,
+```
+
 ## Command Line Options
 
 ```
-usage: domain-check [-h] (-d DOMAIN | -f FILE) [-a]
+usage: domain-check [-h] (-d DOMAIN | -f FILE) [-a] [-c CSV]
 
 Check domain availability
 
@@ -137,6 +159,7 @@ options:
                         Single domain to check
   -f FILE, --file FILE  File containing comma-separated domains
   -a, --available-only  Show only available domains
+  -c CSV, --csv CSV     Export results to CSV file
 ```
 
 ## Troubleshooting
