@@ -3,11 +3,9 @@
 import sys
 import os
 import tempfile
-import importlib
 from pathlib import Path
 from unittest.mock import Mock, patch
 import pytest
-import runpy
 import requests
 
 # Add parent directory to Python path to import domain_check.py
@@ -299,7 +297,8 @@ def test_main_available_only():
 
         with patch("domain_check.check_domain") as mock_check:
             mock_check.side_effect = mock_results
-            with patch("sys.argv", ["domain_check.py", "-f", temp_file.name, "-a"]):
+            args = ["domain_check.py", "-f", temp_file.name, "-a"]
+            with patch("sys.argv", args):
                 with patch("builtins.print") as mock_print:
                     main()
                     mock_print.assert_called_with("example.com")
@@ -318,30 +317,40 @@ def test_main_with_csv_output():
         },
     ]
 
-    with tempfile.NamedTemporaryFile(mode="w", delete=False) as domains_file:
-        domains_file.write("test.com")
-        domains_file.flush()
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as df:
+        df.write("test.com")
+        df.flush()
 
-        with tempfile.NamedTemporaryFile(mode="w", delete=False) as csv_file:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as cf:
             with patch("domain_check.check_domain") as mock_check:
                 mock_check.side_effect = mock_results
-                with patch(
-                    "sys.argv",
-                    ["domain_check.py", "-f", domains_file.name, "-c", csv_file.name],
-                ):
+                args = [
+                    "domain_check.py",
+                    "-f",
+                    df.name,
+                    "-c",
+                    cf.name,
+                ]
+                with patch("sys.argv", args):
                     with patch("builtins.print") as mock_print:
                         main()
-                        mock_print.assert_called_with(f"\nResults exported to {csv_file.name}")
+                        msg = "\nResults exported to " + cf.name
+                        mock_print.assert_called_with(msg)
 
             # Verify CSV contents
-            with open(csv_file.name, "r") as f:
+            with open(cf.name, "r") as f:
                 content = f.read().strip().split("\n")
                 header = "domain,status,registration_date,expiration_date"
                 assert content[0] == header
-                assert content[1] == "test.com,REGISTERED,2020-01-01,2025-01-01"
+                assert content[1] == (
+                    "test.com, \
+                    REGISTERED, \
+                    2020-01-01, \
+                    2025-01-01"
+                )
 
-        os.unlink(csv_file.name)
-    os.unlink(domains_file.name)
+        os.unlink(cf.name)
+    os.unlink(df.name)
 
 
 def test_main_direct():
@@ -349,6 +358,7 @@ def test_main_direct():
     with patch("sys.argv", ["domain_check.py", "-d", "test.com"]):
         with patch("domain_check.main") as mock_main:
             import domain_check
+
             domain_check.__name__ = "__main__"
             domain_check.main()
             assert mock_main.called
