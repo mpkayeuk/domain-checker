@@ -348,10 +348,7 @@ def test_main_with_csv_output():
                 content = f.read().strip().split("\n")
                 header = "domain,status,registration_date,expiration_date"
                 assert content[0] == header
-                expected = (
-                    "test.com,REGISTERED,"
-                    "2020-01-01,2025-01-01"
-                )
+                expected = "test.com,REGISTERED," "2020-01-01,2025-01-01"
                 assert content[1] == expected
 
             os.unlink(cf.name)
